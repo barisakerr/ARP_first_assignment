@@ -35,6 +35,7 @@ void WriteLog(char * msg){
     }
 }
 
+// creating a child process
 int spawn(const char * program, char * arg_list[]) {
 
   pid_t child_pid = fork();
@@ -119,6 +120,7 @@ int watchdog(){
 }
 
 
+// opening and writing to log file 
 int main() {
   if ((log_fd = open("log/master.log",O_WRONLY|O_APPEND|O_CREAT, 0666))==-1){
     perror("Error opening log file");
