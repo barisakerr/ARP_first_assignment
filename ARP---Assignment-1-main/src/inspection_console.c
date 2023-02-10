@@ -19,7 +19,7 @@ char log_buffer[100];
 time_t rawtime;
 struct tm *info;
 
-// write log file
+// writing the log file
 void WriteLog(char * msg){
     sprintf(log_buffer, msg);
     sprintf(log_buffer + strlen(log_buffer), asctime(info));
@@ -36,12 +36,12 @@ int main(int argc, char const *argv[]){
     // Utility variable to avoid trigger resize event on launch
     int first_resize = TRUE;
 
-    // End-effector coordinates
+    // Initializing the End-effector coordinates of the x and y
     float ee_x, ee_y; // these values and the parameters which are located at the below need to make sence together be in attention to them 
     ee_x = 0.0;
     ee_y = 0.0; 
 
-    // Initialize User Interface 
+    // Initializing the User Interface 
     init_console_ui();
 
     int fd;
@@ -51,25 +51,24 @@ int main(int argc, char const *argv[]){
     pid_t pid_motorX = atoi(argv[1]);
     pid_t pid_motorZ = atoi(argv[2]); 
 
-    // Open the log file
+    // Opening the log file
     if ((log_fd = open("log/inspection.log",O_WRONLY|O_APPEND|O_CREAT, 0666))==-1){
-        // If the file could not be opened, print an error message and exit
+        // If the file will not open, printing an error message 
         perror("Error opening command file");
-        // exit(1);
+        
     }
 
-    // Infinite loop
+    
     while(TRUE){
-        //perror("inspection_console: FD5r: open()");
-
-        // Get current time
+        
+        // Taking current time
         time(&rawtime);
         info = localtime(&rawtime);
         
         // Get mouse/resize commands in non-blocking mode...
         int cmd = getch();
 
-        // If user resizes screen, re-draw UI
+        // If user resizes screen, re-draw user  interface
         if(cmd == KEY_RESIZE) {
             if(first_resize) {
                 first_resize = FALSE;
@@ -119,31 +118,34 @@ int main(int argc, char const *argv[]){
         }
         
 
-        // Open the FIFOs
+        // Opening the pipes for read
         if ((fd = open(RealPosFifo, O_RDONLY))==-1){
             close(fd);
             perror("Error opening fifo");
         }
 
-        // Read the FIFOs from World
+        // Read the pipes from World
         if(read(fd, Pos, sizeof(Pos)) == -1){
             close(fd);
             perror("Error reading fifo");
         }
 
+        // closing pipe
         close(fd);
 
         ee_x=Pos[0];
         ee_y=Pos[1];
        
-        // Update UI
+        // Updating the user interface 
         update_console_ui(&ee_x, &ee_y);
         sleep(1);
 	}
 
+    // closing log file 
     close(log_fd);
 
     // Terminate
     endwin();
     return 0;
 }
+
