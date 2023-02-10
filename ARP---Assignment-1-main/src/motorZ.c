@@ -10,12 +10,12 @@
 #include <math.h>
 #include <time.h>
 
-
+// initializing the hoist position on z axis and velocity of the motor z
 float Zvel=0;
 float ZvelPlus=0;
 float Zpos=0;
 
-// set up it;
+// setting them up
 const float Zmin=0;
 const float Zmax=10;
 const float Vmax=2;
@@ -26,7 +26,7 @@ char log_buffer[100];
 time_t rawtime;
 struct tm *info;
 
-// write log file
+// writing the log file
 void WriteLog(char * msg){
     sprintf(log_buffer, msg);
     sprintf(log_buffer + strlen(log_buffer), asctime(info));
@@ -38,6 +38,7 @@ void WriteLog(char * msg){
     }
 }
 
+// creating a function to send the position data of motor z to the world by using the named pipe 
 void SendPosition(const char * myfifo, float Zpos){
     int fd;
     if ((fd = open(myfifo, O_WRONLY))==-1){
@@ -54,6 +55,7 @@ void SendPosition(const char * myfifo, float Zpos){
     close(fd);
 }
 
+// creating a function to make the velocity calculation 
 float VelCalculator(const char * myfifo, int command, float Zvel){
     int fd;
     if(fd = open(myfifo, O_RDONLY|O_NDELAY)){
@@ -81,25 +83,26 @@ float VelCalculator(const char * myfifo, int command, float Zvel){
     exit(1);
 }
 
+// Creating the Emergency Stop signal handler
 void stop_handler(int sig){
     if(sig==SIGUSR1){
-        // Stop the motor
+        // Stop the motor z 
         Zvel=0;
 
-        // Listen for stop signal
+        // Listening the stop signal
         if(signal(SIGUSR1, stop_handler)==SIG_ERR){
             exit(1);
         }
     }
 }
 
-// Reset signal handler
+// Creating the Reset signal handler
 void reset_handler(int sig){
     if(sig == SIGUSR2){
-        // Setting velocity to -5
+        // Setting the motor z velocity as -2
         Zvel=-2;
         
-        // Listen for stop signal
+        // Listening the stop signal
         if(signal(SIGUSR2, reset_handler)==SIG_ERR){
             exit(1);
         }
@@ -107,7 +110,7 @@ void reset_handler(int sig){
 }
 
 int main(int argc, char const *argv[]){
-    // definition of the second named pipe between the command console and motor2
+    // initializing the named pipes 
     int fd;
     char * VzFifo = "/tmp/VzFifo";
     mkfifo(VzFifo, 0666);
@@ -116,13 +119,13 @@ int main(int argc, char const *argv[]){
 
     int command = -1;
 
-    // Open the log file
+    // Opening the log file and writing to the log file 
     if ((log_fd = open("log/motorZ.log",O_WRONLY|O_APPEND|O_CREAT, 0666))==-1){
         perror("Error opening motorZ log file.");
         return 1;
     }
 
-    // Listen for signals
+    // Listening the signals
     if(signal(SIGUSR1, stop_handler)==SIG_ERR || signal(SIGUSR2, reset_handler)==SIG_ERR){
         // Close file descriptors
         close(VzFifo);
@@ -135,7 +138,8 @@ int main(int argc, char const *argv[]){
         time(&rawtime);
         info = localtime(&rawtime);
         
-        ZvelPlus = VelCalculator(VzFifo, command, Zvel);
+        // calculation of velocity and positon of z 
+        ZvelPlus = VelCalculator(VzFifo, command, Zvel); 
         if(ZvelPlus==2){
             Zvel=0;
             ZvelPlus=0;
