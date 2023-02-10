@@ -10,7 +10,7 @@
 #include <time.h>
 #include <math.h>
 
-
+// older x,y positions - real x,y positions initializations 
 float OldXpos=0;
 float OldZpos=0;
 float Xpos=0;
@@ -19,7 +19,7 @@ float RealXpos=0;
 float RealZpos=0;
 float Pos[2];
 
-// set up it;
+// setting them up
 const float Xmin=0;
 const float Xmax=40;
 const float Zmin=0;
@@ -31,7 +31,7 @@ char log_buffer[100];
 time_t rawtime;
 struct tm *info;
 
-// write log file
+// writing the log file
 void WriteLog(char * msg){
     sprintf(log_buffer, msg);
     sprintf(log_buffer + strlen(log_buffer), asctime(info));
@@ -43,6 +43,7 @@ void WriteLog(char * msg){
     }
 }
 
+// creating a random error 
 float ErrorGenerator(float tempPos){
     if (tempPos==0.0){
         return 0.0;
@@ -52,7 +53,7 @@ float ErrorGenerator(float tempPos){
     WriteLog("Error generated.");
     return (float)n/100;
 }
-
+// creating a function to send the position data by using the named pipe 
 void SendPosition(char * myfifo, float RealPos[2]){
     int fd;
     if ((fd = open(myfifo, O_WRONLY))==-1){ 
@@ -65,11 +66,12 @@ void SendPosition(char * myfifo, float RealPos[2]){
         perror("Error in writing function");
         exit(1);
     }
-    // WriteLog("Position sent.");
+    // closing the pipe
     close(fd);
 }
 
 int main(int argc, char const *argv[]){
+    // initializing the named pipes 
     int fd;
     char * PxFifo = "/tmp/PxFifo";
     char * PzFifo = "/tmp/PzFifo";
@@ -78,17 +80,18 @@ int main(int argc, char const *argv[]){
     mkfifo(PzFifo, 0666);
     mkfifo(RealPosFifo, 0666);
 
-    // Open the log file
+    // Opening the log file
     if ((log_fd = open("log/world.log",O_WRONLY|O_APPEND|O_CREAT, 0666))==-1){
         perror("Error opening world log file");
         return 1;
     }
 
     while(1){
-        // Get current time
+        // Taking the current time
         time(&rawtime);
         info = localtime(&rawtime);
 
+        // opening the pipe which is comming from the motor x and reading the x position
         if(fd = open(PxFifo, O_RDONLY)){
             if(read(fd, &Xpos, sizeof(Xpos))==-1){
                 close(log_fd);
@@ -105,6 +108,7 @@ int main(int argc, char const *argv[]){
             exit(1);
         }
 
+        // opening the pipe which is comming from the motor z and reading the z position
         if(fd = open(PzFifo, O_RDONLY)){
             if(read(fd, &Zpos, sizeof(Zpos))==-1){
                 close(log_fd);
@@ -121,22 +125,24 @@ int main(int argc, char const *argv[]){
         }
 
 
+        // process of adding the error to the x position 
         if(Xpos!=OldXpos){
             RealXpos=Xpos+ErrorGenerator(Xpos);
-            if(RealXpos>40){
-                RealXpos=40;
-            } else if(RealXpos<0){
-                RealXpos=0;
+            if(RealXpos>Xmax){
+                RealXpos=Xmax;
+            } else if(RealXpos<Xmin){
+                RealXpos=Xmin;
             }
             OldXpos=Xpos;
         }
 
+        // process of adding the error to the z position 
         if(Zpos!=OldZpos){
             RealZpos=Zpos+ErrorGenerator(Zpos);
-            if(RealZpos>10){
-                RealZpos=10;
-            } else if(RealZpos<0){
-                RealZpos=0;
+            if(RealZpos>Zmax){
+                RealZpos=Zmax;
+            } else if(RealZpos<Zmin){
+                RealZpos=Zmin;
             }
             OldZpos=Zpos;
         }
