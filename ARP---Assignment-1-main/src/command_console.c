@@ -11,7 +11,6 @@
 #include <sys/wait.h>
 #include <math.h>
 
-
 // log
 int log_fd;
 char log_buffer[100];
@@ -20,7 +19,7 @@ char log_buffer[100];
 time_t rawtime;
 struct tm *info;
 
-// write log file
+// writing to log file
 void WriteLog(char * msg){
     sprintf(log_buffer, msg);
     sprintf(log_buffer + strlen(log_buffer), asctime(info));
@@ -32,6 +31,8 @@ void WriteLog(char * msg){
     }
 }
 
+
+// creating a function to send the velocity data to the motorx by using the named pipe
 void SendVelocity(char * myfifo, int Vel){
     int fd;
     if((fd = open(myfifo, O_WRONLY))==-1){
@@ -56,7 +57,7 @@ int main(int argc, char const *argv[]){
     // Initialize User Interface 
     init_console_ui();
 
-    //Defining the first named pipe between command window and motor 1  
+    //Defining the named pipes between command window to motor x and motor z 
     int fd;
     char * VxFifo = "/tmp/VxFifo";
     mkfifo(VxFifo, 0666);
@@ -65,12 +66,11 @@ int main(int argc, char const *argv[]){
 
     // Open the log file
     if ((log_fd = open("log/command.log",O_WRONLY|O_APPEND|O_CREAT, 0666)) == -1){
-        // If the file could not be opened, print an error message and exit
+        // If the file will not be opened, print an error message 
         perror("Error opening command file");
         exit(1);
     }
 
-    // Infinite loop
     while(TRUE){
 
         // Get current time
@@ -79,10 +79,10 @@ int main(int argc, char const *argv[]){
         
         fflush(stdout);
 
-        // Get mouse/resize commands in non-blocking mode...
+        // Get mouse/resize commands in non-blocking mode
         int cmd = getch();
 
-        // If user resizes screen, re-draw UI
+        // If user resizes the screen, re-draw UI
         if(cmd == KEY_RESIZE) {
             if(first_resize) {
                 first_resize = FALSE;
@@ -93,10 +93,10 @@ int main(int argc, char const *argv[]){
         // Else if mouse has been pressed
         else if(cmd == KEY_MOUSE) {
 
-            // Check which button has been pressed...
+            // Checking which button pressed
             if(getmouse(&event) == OK) {
 
-                // Vx-- button pressed
+                // Vx-- button pressed - Velocity data sending and writing to the log file 
                 if(check_button_pressed(vx_decr_btn, &event)) {
                     mvprintw(LINES - 1, 1, "Horizontal Speed Decreased");
 
@@ -110,7 +110,7 @@ int main(int argc, char const *argv[]){
                     }
                 }
 
-                // Vx++ button pressed
+                // Vx++ button pressed - Velocity data sending and writing to the log file 
                 else if(check_button_pressed(vx_incr_btn, &event)) {
                     mvprintw(LINES - 1, 1, "Horizontal Speed Increased");
 
@@ -124,7 +124,7 @@ int main(int argc, char const *argv[]){
                     }
                 }
 
-                // Vx stop button pressed
+                // Vx stop button pressed - Velocity data sending and writing to the log file 
                 else if(check_button_pressed(vx_stp_button, &event)) {
                     mvprintw(LINES - 1, 1, "Horizontal Motor Stopped");
 
@@ -138,7 +138,7 @@ int main(int argc, char const *argv[]){
                     }
                 }
 
-                // Vz++ button pressed
+                // Vz++ button pressed - Velocity data sending and writing to the log file 
                 else if(check_button_pressed(vz_decr_btn, &event)) {
                     mvprintw(LINES - 1, 1, "Vertical Speed Decreased");
 
@@ -152,7 +152,7 @@ int main(int argc, char const *argv[]){
                     }
                 }
 
-                // Vz-- button pressed
+                // Vz-- button pressed - Velocity data sending and writing to the log file 
                 else if(check_button_pressed(vz_incr_btn, &event)) {
                     mvprintw(LINES - 1, 1, "Vertical Speed Increased");
                     
@@ -166,7 +166,7 @@ int main(int argc, char const *argv[]){
                     }
                 }
 
-                // Vz stop button pressed
+                // Vz stop button pressed - Velocity data sending and writing to the log file 
                 else if(check_button_pressed(vz_stp_button, &event)) {
                     mvprintw(LINES - 1, 1, "Vertical Motor Stopped");
 
@@ -184,9 +184,9 @@ int main(int argc, char const *argv[]){
         refresh();
 	}
 
+    // closing the log file
     close(log_fd);
 
-    // Terminate
     endwin();
     return 0;
 }
